@@ -53,9 +53,16 @@
       // .hover(関数, 関数) 要素の上にマウスカーソルが乗ると第1引数の関数を実行し、マウスカーソルから離れると第2引数の関数を実行します。
       // .slideDown() 要素がスライドしながら表示されます。
       // .slideUp() 要素がスライドしながら非表示されます。
-      // .next() 要素の隣の要素を取得します。これは使わなくてもできます。
+      // .next() 要素の隣の要素を取得します。これは使わなくてもできます。　？ $('.menu__list__title').next().slideDown(); ？
       // .children() 要素の子要素を取得します。
       // .stop() 現在動作中のアニメーション処理を全て中止します。
+      $(function() {
+        $('.menu__list').find('li').hover(function() {
+           $(this).children('.menu__list__childList').slideDown();
+        }, function() {
+          $(this).children('.menu__list__childList').slideUp(); //.stop()
+        });
+      });
     </script>
   </body>
 </html>
