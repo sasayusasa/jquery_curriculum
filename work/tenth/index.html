@@ -87,28 +87,97 @@
       //   </div>
       // </div>
       $(function() {
-        $('search__btn').on('click', function() {
+        var nowPage = 1;
+        $('.search__btn').on('click', function() {
+          search();
+        });
+        $(document).on('click', '[data-js="page-prev"]', function(e) { //document=現在のドキュメント全体 動的に追加された要素の指定方法。
+          e.preventDefault();
+          nowPage--;
+          search();
+        });
+        $(document).on('click', '[data-js="page-next"]', function(e) {
+          e.preventDefault();
+          nowPage++;
+          search();
+        });
+        function search() {
           var searchword = $('.search__text__input').val();
           $.ajax({
             url: 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20130522',
-            type: 'GET',
-            datatype: 'json',
+            type: 'GET', //サーバーからデータを取得。(POST=大容量のデータを送信する際に使用。)
+            datatype: 'json', //軽量のデータ交換フォーマット。
             data: {
               keyword: searchword,
               applicationId: '1019399324990976605',
               booksGenreId: '001',
-              page: 1,
+              page: nowPage,
               hits: 20
             },
-          }).done(function(data) {
-            if (data.count > 0){
-              $.each(function() {
-                
-              })
-            }
-            console.log(data);
           })
-        })
+          .done(function(data) {
+            data.Items.forEach(function(i) {
+              var template = 
+                '<li class="lists__item">' +
+                  '<div class="lists__item__inner">' +
+                    '<a href="'+ i.Item.itemUrl +'" class="lists__item__link" target="_blank">' +
+                      '<img src="'+ i.Item.mediumImageUrl +'" class="lists__item__img" alt="i.Item.title">' +
+                      '<p class="lists__item__detail">作品名：'+ i.Item.title +'</p>' +
+                      '<p class="lists__item__detail">作者　：'+ i.Item.author +'</p>' +
+                      '<p class="lists__item__detail">出版社：'+ i.Item.publisherName +'</p>' +
+                    '</a>' +
+                  '</div>' +
+                '</li>';
+              $('.lists').append(template);
+            })
+            if (data.count === 0) {
+              $('.message').html('<p class="error-message">検索結果は０でした。<br>別のワードで検索して下さい。</p>');
+            } else if (data.count > 0) {
+              var pagerTemplate =
+                '<div class="pager" data-js="pager">' +
+                  '<div class="counter">' +
+                    '<span class="counter-current">'+ data.page +'</span>/<span class="counter-all">'+ data.pageCount +'</span>' +
+                  '</div>' +
+                  '<div class="btn-wrapper">' +
+                    '<a class="btn-item" data-js="page-prev" href="#">前へ</a>' +
+                    '<a class="btn-item" data-js="page-next" href="#">次へ</a>' +
+                  '</div>' +
+                '</div>';
+              $('.container').append(pagerTemplate);
+              if (data.pageCount　=== 1) {
+                $('.btn-item').addClass('disabled');
+              } else if (data.page === 1) {
+                $('[data-js="page-prev"]').addClass('disabled');
+              } else if (data.page === data.pageCount) {
+                $('[data-js="page-next"]').addClass('disabled');
+              };
+            };
+          })
+          .fail(function(error) {
+            $('.message').html(function(index, element) {
+              switch (error.status) {
+                case 400:
+                return element + '<p class="error-message">検索ワードを入力して下さい。</p>';
+                bleak;
+                case 404:
+                return element + '<p class="error-message">データが存在しません。</p>';
+                bleak;
+                case 429:
+                return element + '<p class="error-message">アクセス過多です。<br>しばらく時間を置いてからお試し下さい。</p>';
+                bleak;
+                case 500:
+                return element + '<p class="error-message">システムエラー</p>';
+                bleak;
+                case 503:
+                return element + '<p class="error-message">メンテナンス中です。</p>';
+                bleak;
+              }
+            });
+          });
+          $('.message').empty();//指定したDOM要素の”子要素のみ”を削除する。
+          $('.lists').empty();
+          $('.pager').remove();//指定したDOM要素自体を削除する。
+        };
       });
     </script>
   </body>
