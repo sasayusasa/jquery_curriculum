@@ -89,6 +89,7 @@
       $(function() {
         var nowPage = 1;
         $('.search__btn').on('click', function() {
+          nowPage = 1;
           search();
         });
         $(document).on('click', '[data-js="page-prev"]', function(e) { //document=現在のドキュメント全体 動的に追加された要素の指定方法。
