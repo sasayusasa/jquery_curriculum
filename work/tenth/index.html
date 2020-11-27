@@ -94,46 +94,64 @@
         });
         $(document).on('click', '[data-js="page-prev"]', function(e) { //document=現在のドキュメント全体 動的に追加された要素の指定方法。
           e.preventDefault();
-          nowPage--;
+          if ($('[data-js="page-prev"]').hasClass('disabled')) {
+            return false;
+          } else if (nowPage > 1) {
+            nowPage--;
+          };
           search();
         });
         $(document).on('click', '[data-js="page-next"]', function(e) {
           e.preventDefault();
-          nowPage++;
+          if ($('[data-js="page-next"]').hasClass('disabled')) {
+            return false;
+          } else if (nowPage < 100) {
+            nowPage++;
+          };
           search();
         });
         function search() {
+          $('.message').empty();//指定したDOM要素の”子要素のみ”を削除する。
+          $('.lists').empty();
+          $('.pager').remove();//指定したDOM要素自体を削除する。
           var searchword = $('.search__text__input').val();
           $.ajax({
             url: 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20130522',
-            type: 'GET', //サーバーからデータを取得。(POST=大容量のデータを送信する際に使用。)
-            datatype: 'json', //軽量のデータ交換フォーマット。
+            type: 'GET',
+            datatype: 'json', //非同期
             data: {
               keyword: searchword,
-              applicationId: '1019399324990976605',
-              booksGenreId: '001',
+              applicationId: '1019399324990976605',//アプリID
+              booksGenreId: '001',//ジャンルID
               page: nowPage,
               hits: 20
             },
           })
           .done(function(data) {
-            data.Items.forEach(function(i) {
+            ok(data);
+          })
+          .fail(function(error) {
+            ng(error);
+          });
+          function ok(data) {
+            if (data.count === 0) {
+              $('.message').html('<p class="error-message">検索結果は０でした。<br>別のワードで検索して下さい。</p>');
+            };
+            $.each(data.Items, function(index, book) {
               var template = 
                 '<li class="lists__item">' +
                   '<div class="lists__item__inner">' +
-                    '<a href="'+ i.Item.itemUrl +'" class="lists__item__link" target="_blank">' +
-                      '<img src="'+ i.Item.mediumImageUrl +'" class="lists__item__img" alt="i.Item.title">' +
-                      '<p class="lists__item__detail">作品名：'+ i.Item.title +'</p>' +
-                      '<p class="lists__item__detail">作者　：'+ i.Item.author +'</p>' +
-                      '<p class="lists__item__detail">出版社：'+ i.Item.publisherName +'</p>' +
+                    '<a href="'+ book.Item.itemUrl +'" class="lists__item__link" target="_blank">' +
+                      '<img src="'+ book.Item.mediumImageUrl +'" class="lists__item__img" alt="i.Item.title">' +
+                      '<p class="lists__item__detail">作品名：'+ book.Item.title +'</p>' +
+                      '<p class="lists__item__detail">作者　：'+ book.Item.author +'</p>' +
+                      '<p class="lists__item__detail">出版社：'+ book.Item.publisherName +'</p>' +
                     '</a>' +
                   '</div>' +
                 '</li>';
               $('.lists').append(template);
-            })
-            if (data.count === 0) {
-              $('.message').html('<p class="error-message">検索結果は０でした。<br>別のワードで検索して下さい。</p>');
-            } else if (data.count > 0) {
+            });
+            if (data.count > 0) {
               var pagerTemplate =
                 '<div class="pager" data-js="pager">' +
                   '<div class="counter">' +
@@ -145,39 +163,37 @@
                   '</div>' +
                 '</div>';
               $('.container').append(pagerTemplate);
-              if (data.pageCount　=== 1) {
-                $('.btn-item').addClass('disabled');
-              } else if (data.page === 1) {
+              if (data.page === 1) {
                 $('[data-js="page-prev"]').addClass('disabled');
-              } else if (data.page === data.pageCount) {
+              }
+              if (data.page === data.pageCount) {
                 $('[data-js="page-next"]').addClass('disabled');
               };
             };
-          })
-          .fail(function(error) {
-            $('.message').html(function(index, element) {
-              switch (error.status) {
-                case 400:
-                return element + '<p class="error-message">検索ワードを入力して下さい。</p>';
-                bleak;
-                case 404:
-                return element + '<p class="error-message">データが存在しません。</p>';
-                bleak;
-                case 429:
-                return element + '<p class="error-message">アクセス過多です。<br>しばらく時間を置いてからお試し下さい。</p>';
-                bleak;
-                case 500:
-                return element + '<p class="error-message">システムエラー</p>';
-                bleak;
-                case 503:
-                return element + '<p class="error-message">メンテナンス中です。</p>';
-                bleak;
-              }
-            });
-          });
-          $('.message').empty();//指定したDOM要素の”子要素のみ”を削除する。
-          $('.lists').empty();
-          $('.pager').remove();//指定したDOM要素自体を削除する。
+          };
+          function ng(error) {
+            switch (error.status) {
+              case 0:
+              errorMessage = '<p class="error-message">インターネットアクセス無し。<br>ネットワークの接続を確認して下さい。</p>';
+              break;
+              case 400:
+              errorMessage = '<p class="error-message">検索ワードを入力して下さい。</p>';
+              break;
+              case 404:
+              errorMessage = '<p class="error-message">データが存在しません。</p>';
+              break;
+              case 429:
+              errorMessage = '<p class="error-message">アクセス過多です。<br>しばらく時間を置いてからお試し下さい。</p>';
+              break;
+              case 500:
+              errorMessage = '<p class="error-message">システムエラー</p>';
+              break;
+              case 503:
+              errorMessage = '<p class="error-message">メンテナンス中です。</p>';
+              break;
+            };
+            $('.message').html(errorMessage);
+          };
         };
       });
     </script>
