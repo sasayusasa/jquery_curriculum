@@ -88,7 +88,7 @@
       // </div>
       $(function() {
         var nowPage = 1;
-        $('.search__btn').on('click', function() {
+        $('[data-js="search-btn"]').on('click', function() {
           nowPage = 1;
           search();
         });
@@ -96,28 +96,28 @@
           e.preventDefault();
           if ($('[data-js="page-prev"]').hasClass('disabled')) {
             return false;
-          } else if (nowPage > 1) {
-            nowPage--;
-          };
+          }
+          //ガード節
+          nowPage--;
           search();
         });
         $(document).on('click', '[data-js="page-next"]', function(e) {
           e.preventDefault();
           if ($('[data-js="page-next"]').hasClass('disabled')) {
             return false;
-          } else if (nowPage < 100) {
-            nowPage++;
-          };
+          }
+          //ガード節
+          nowPage++;
           search();
         });
         function search() {
           $('.message').empty();//指定したDOM要素の”子要素のみ”を削除する。
           $('.lists').empty();
           $('.pager').remove();//指定したDOM要素自体を削除する。
-          var searchword = $('.search__text__input').val();
+          var searchword = $('[data-js="search-word"]').val();
           $.ajax({
             url: 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20130522',
-            type: 'GET',
+            type: 'GET',//URLに取得した内容が表示される。POSTはされない。
             datatype: 'json', //非同期
             data: {
               keyword: searchword,
@@ -128,29 +128,29 @@
             },
           })
           .done(function(data) {
-            ok(data);
+            access(data);
           })
           .fail(function(error) {
-            ng(error);
+            accessfailure(error);
           });
-          function ok(data) {
+          function access(data) {
             if (data.count === 0) {
               $('.message').html('<p class="error-message">検索結果は０でした。<br>別のワードで検索して下さい。</p>');
             };
+            var template = '';
             $.each(data.Items, function(index, book) {
-              var template = 
-                '<li class="lists__item">' +
-                  '<div class="lists__item__inner">' +
-                    '<a href="'+ book.Item.itemUrl +'" class="lists__item__link" target="_blank">' +
-                      '<img src="'+ book.Item.mediumImageUrl +'" class="lists__item__img" alt="i.Item.title">' +
-                      '<p class="lists__item__detail">作品名：'+ book.Item.title +'</p>' +
-                      '<p class="lists__item__detail">作者　：'+ book.Item.author +'</p>' +
-                      '<p class="lists__item__detail">出版社：'+ book.Item.publisherName +'</p>' +
-                    '</a>' +
-                  '</div>' +
-                '</li>';
-              $('.lists').append(template);
+              template += '<li class="lists__item">' +
+                            '<div class="lists__item__inner">' +
+                              '<a href="'+ book.Item.itemUrl +'" class="lists__item__link" target="_blank">' +
+                                '<img src="'+ book.Item.mediumImageUrl +'" class="lists__item__img" alt="i.Item.title">' +
+                                '<p class="lists__item__detail">作品名：'+ book.Item.title +'</p>' +
+                                '<p class="lists__item__detail">作者　：'+ book.Item.author +'</p>' +
+                                '<p class="lists__item__detail">出版社：'+ book.Item.publisherName +'</p>' +
+                              '</a>' +
+                            '</div>' +
+                          '</li>';
             });
+            $('.lists').append(template);
             if (data.count > 0) {
               var pagerTemplate =
                 '<div class="pager" data-js="pager">' +
@@ -171,28 +171,31 @@
               };
             };
           };
-          function ng(error) {
+          function accessfailure(error) {
+            var errorMessage;
             switch (error.status) {
               case 0:
-              errorMessage = '<p class="error-message">インターネットアクセス無し。<br>ネットワークの接続を確認して下さい。</p>';
-              break;
+                errorMessage = "インターネットアクセス無し。<br>ネットワークの接続を確認して下さい。";
+                break;
               case 400:
-              errorMessage = '<p class="error-message">検索ワードを入力して下さい。</p>';
-              break;
+                errorMessage = "検索ワードを入力して下さい。";
+                break;
               case 404:
-              errorMessage = '<p class="error-message">データが存在しません。</p>';
-              break;
+                errorMessage = "データが存在しません。";
+                break;
               case 429:
-              errorMessage = '<p class="error-message">アクセス過多です。<br>しばらく時間を置いてからお試し下さい。</p>';
-              break;
+                errorMessage = "アクセス過多です。<br>しばらく時間を置いてからお試し下さい。";
+                break;
               case 500:
-              errorMessage = '<p class="error-message">システムエラー</p>';
-              break;
+                errorMessage = "システムエラー";
+                break;
               case 503:
-              errorMessage = '<p class="error-message">メンテナンス中です。</p>';
-              break;
+                errorMessage = "メンテナンス中です。";
+                break;
+              default:
+                errorMessage = "不明なエラー";
             };
-            $('.message').html(errorMessage);
+            $('.message').html('<p class="error-message">'+ errorMessage +'</p>');
           };
         };
       });
